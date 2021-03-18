@@ -1,3 +1,5 @@
+const db = require('../../data/db-config');
+
 function find() { // EXERCISE A
   /*
     1A- Study the SQL query below running it in SQLite Studio against `data/schemes.db3`.
@@ -15,7 +17,16 @@ function find() { // EXERCISE A
     2A- When you have a grasp on the query go ahead and build it in Knex.
     Return from this function the resulting dataset.
   */
+
+
+    return db('schemes')
+    .leftJoin('steps', 'schemes.scheme_id', 'steps.scheme_id')
+    .column('schemes.scheme_id', 'schemes.scheme_name')
+    .count({number_of_steps: 'steps.step_id'})
+    .groupBy('schemes.scheme_id')
+    .orderBy('schemes.scheme_id', 'asc')
 }
+
 
 function findById(scheme_id) { // EXERCISE B
   /*
@@ -83,9 +94,22 @@ function findById(scheme_id) { // EXERCISE B
         "steps": []
       }
   */
+
+      return db('schemes')
+      .leftJoin('steps', 'schemes.scheme_id', 'steps.scheme_id')
+      .where('steps.scheme_id', scheme_id).first()
+      .orderBy('steps.step_number')
 }
 
-function findSteps(scheme_id) { // EXERCISE C
+function findSteps(scheme_id) { 
+  
+  return db('steps')
+  .select('schemes.scheme_name', 'step_number', 'instructions')
+  .join('schemes', 'steps.scheme_id', 'schemes.scheme_id')
+  .where('schemes.scheme_id', scheme_id)
+  .orderBy('steps.step_number')
+  
+  // EXERCISE C
   /*
     1C- Build a query in Knex that returns the following data.
     The steps should be sorted by step_number, and the array
@@ -108,18 +132,34 @@ function findSteps(scheme_id) { // EXERCISE C
   */
 }
 
-function add(scheme) { // EXERCISE D
+function add(scheme) {
+  
+  // EXERCISE D
   /*
-    1D- This function creates a new scheme and resolves to _the newly created scheme_.
+    
+  1D- This function creates a new scheme and resolves to _the newly created scheme_.
   */
+ return db('schemes')
+  .insert(scheme)
+  
 }
 
-function addStep(scheme_id, step) { // EXERCISE E
+async function addStep(scheme_id, step) { // EXERCISE E
   /*
     1E- This function adds a step to the scheme with the given `scheme_id`
     and resolves to _all the steps_ belonging to the given `scheme_id`,
     including the newly created one.
   */
+  const stepToAdd = {
+    scheme_id: scheme_id,
+    step_number: parseInt(step.step_number),
+    instructions: step.instructions
+  };
+
+  await db('steps')
+    .insert(stepToAdd)
+  
+  return findSteps(scheme_id);
 }
 
 module.exports = {
